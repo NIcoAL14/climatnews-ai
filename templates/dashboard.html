@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - ClimateNews AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1>🌍 ClimateNews AI</h1>
+        <nav>
+            <a href="/">Inicio</a>
+            <a href="/dashboard">Dashboard</a>
+        </nav>
+    </header>
+
+    <main>
+        <section class="dashboard">
+            <h2>Dashboard de Análisis</h2>
+
+            <div class="stats-container">
+                <div class="stat-card">
+                    <h3>Noticias Analizadas</h3>
+                    <p id="total-news">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Impacto Alto</h3>
+                    <p id="high-impact">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Impacto Medio</h3>
+                    <p id="medium-impact">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Impacto Bajo</h3>
+                    <p id="low-impact">0</p>
+                </div>
+            </div>
+
+            <div class="charts-container">
+                <div class="chart">
+                    <h3>Distribución por Impacto</h3>
+                    <div id="impact-chart"></div>
+                </div>
+                <div class="chart">
+                    <h3>Nube de Palabras</h3>
+                    <div id="wordcloud">
+                        <p>Funcionalidad en desarrollo...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="news-list">
+                <h3>Últimas Noticias</h3>
+                <div id="news-container">
+                    <p>Cargando noticias...</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 ClimateNews AI - Hackathon</p>
+    </footer>
+
+    <script>
+        // Cargar datos de la API
+        async function loadData() {
+            try {
+                const [newsResponse, statsResponse] = await Promise.all([
+                    fetch('/api/news'),
+                    fetch('/api/stats')
+                ]);
+
+                const news = await newsResponse.json();
+                const stats = await statsResponse.json();
+
+                // Actualizar estadísticas
+                document.getElementById('total-news').textContent = news.length;
+                document.getElementById('high-impact').textContent = stats.alto || 0;
+                document.getElementById('medium-impact').textContent = stats.medio || 0;
+                document.getElementById('low-impact').textContent = stats.bajo || 0;
+
+                // Renderizar gráfico de impacto
+                renderImpactChart(stats);
+
+                // Renderizar lista de noticias
+                renderNewsList(news);
+            } catch (error) {
+                console.error('Error al cargar datos:', error);
+            }
+        }
+
+        function renderImpactChart(stats) {
+            const data = [{
+                values: [stats.alto || 0, stats.medio || 0, stats.bajo || 0],
+                labels: ['Alto', 'Medio', 'Bajo'],
+                type: 'pie'
+            }];
+
+            const layout = {
+                margin: { t: 0, b: 0, l: 0, r: 0 }
+            };
+
+            Plotly.newPlot('impact-chart', data, layout);
+        }
+
+        function renderNewsList(news) {
+            const container = document.getElementById('news-container');
+            container.innerHTML = news.map(item => `
+                <div class="news-item">
+                    <h4>${item.title}</h4>
+                    <p class="news-meta">${item.source} - ${item.date}</p>
+                    <span class="impact-badge impact-${item.impact_level}">${item.impact_level}</span>
+                </div>
+            `).join('');
+        }
+
+        // Cargar datos al iniciar
+        loadData();
+    </script>
+</body>
+</html>
